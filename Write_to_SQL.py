@@ -4,13 +4,16 @@ import time
 import datetime
 import math
 import sqlite3
+from digi.xbee.devices import DigiMeshDevice, RemoteXBeeDevice, XBee64BitAddress, XBeeDevice
+
 
 #Connect to SQLite Database
 conn = sqlite3.connect('SensorData')
 c = conn.cursor()
+device = None
 
 #Begins serial connection
-ser = serial.Serial('/dev/ttyACM0', 115200, timeout=1.0) ##Opens Communication at same rate on correct port
+ser = serial.Serial('/dev/ttyACM1', 115200, timeout=1.0) ##Opens Communication at same rate on correct port
 time.sleep(3) ##Waits for 3 seconds before starting after boot up
 ser.reset_input_buffer() ##Stops data collection until buffer
 
@@ -42,14 +45,43 @@ try:
             formatted_time = current_time.strftime('%H:%M:%S')
             current_date = datetime.date.today()
             date_string = current_date.strftime('%Y-%m-%d')
+            sent = "N"
+            lattitude = 0
+            longitude = 0
             
             #Write to SQLite Database
-            c.execute("INSERT INTO sensordata (saturation, turbidity, currentdate, currenttime, lattitude, longitude) VALUES (?, ?, ?, ?, ?, ?)", (sat, voltage, date_string, formatted_time, lattitude, longitude))
+            c.execute("INSERT INTO sensordata (saturation, turbidity, currentdate, currenttime, lattitude, longitude, sent) VALUES (?, ?, ?, ?, ?, ?, ?)", (sat, voltage, date_string, formatted_time, lattitude, longitude, sent))
             conn.commit()
             time.sleep(1)
+            
+            #locations = ["/dev/ttyUSB0", "/dev/ttyUSB1", "/dev/ttyUSB2", "/dev/ttyUSB3"]
+            #for usb in locations:
+                ##try:
+                    #print('trying ' + usb)
+            device = DigiMeshDevice("/dev/ttyUSB0", 115200)
+            device.open()
+                    #break
+                #except:
+                    #pass
+            
+            select_stmt = "SELECT * FROM sensordata"
+            c.execute(select_stmt)
+            records = c.fetchall()
+            
+
+            time.sleep(1)
+
+            for record in records:
+                record_str = ','.join([str(value) for value in record])
+
+                device.send_data_broadcast(record_str.encode())
+                print('Broadcasting...')
+                time.sleep(10)
+            c.close()
 
 #Close Communication
 except KeyboardInterrupt:
     print("Serial Communication Closed.")
     ser.close()
     conn.close()
+    device.close()
