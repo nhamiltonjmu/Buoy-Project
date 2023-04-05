@@ -1,4 +1,6 @@
 import sqlite3
+import time
+import serial
 import datetime
 
 
@@ -80,3 +82,13 @@ def getDateTime():
     
     return dateTimeOutput
     
+def slaveSerial(slavePort):
+    slave = serial.Serial(slavePort, 115200, timeout=1.0)
+    time.sleep(3)
+    slave.reset_input_buffer()
+    while True:
+        time.sleep(0.01)
+        if slave.in_waiting > 1:
+            slaveData = slave.readline().decode('utf-8')
+            
+            return (slaveData)
