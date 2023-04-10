@@ -1,0 +1,37 @@
+# Instantiate a local XBee object.
+import time
+
+from digi.xbee.devices import XBeeDevice
+from digi.xbee.models.mode import NeighborDiscoveryMode
+from digi.xbee.models.options import DiscoveryOptions
+xbee = None
+ports = ["/dev/ttyUSB0"] # "/dev/ttyUSB1", "/dev/ttyUSB2"]
+
+for port in ports:
+    try:
+        print("Trying:" + port)
+        print(port)
+        xbee = XBeeDevice("/dev/ttyUSB0", 9600)
+        
+        try:
+            xbee.open()
+        except Exception as e:
+            print("trying new")
+            print(e)
+            continue
+        # Get the network.
+        #break
+        xnet = xbee.get_network()
+        print(xnet)
+        break
+       
+
+
+
+# Start the discovery process and wait for it to be over.
+        xnet.start_discovery_process(deep=True, n_deep_scans=1)
+        while xnet.is_discovery_running():
+            time.sleep(0.5)
+
+            print("%s" % '\n'.join(map(str, xnet.get_connections())))
+            xbee.close()
