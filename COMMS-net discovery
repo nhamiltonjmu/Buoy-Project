@@ -1,4 +1,4 @@
-#Instantiate a local XBee object.
+# Instantiate a local XBee object.
 import time
 
 from digi.xbee.devices import XBeeDevice
@@ -14,7 +14,7 @@ for port in ports:
         xbee = XBeeDevice(port, 9600)
         
         try:
-            xbee.open()
+            xbee.open(xbee)
         except Exception as e:
             print("trying new")
             print(e)
