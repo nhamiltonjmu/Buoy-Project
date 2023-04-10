@@ -1,17 +1,17 @@
-# Instantiate a local XBee object.
+#Instantiate a local XBee object.
 import time
 
 from digi.xbee.devices import XBeeDevice
 from digi.xbee.models.mode import NeighborDiscoveryMode
 from digi.xbee.models.options import DiscoveryOptions
 xbee = None
-ports = ["/dev/ttyUSB0"] # "/dev/ttyUSB1", "/dev/ttyUSB2"]
+ports = ["/dev/ttyUSB0", "/dev/ttyUSB1", "/dev/ttyUSB2"]
 
 for port in ports:
     try:
         print("Trying:" + port)
         print(port)
-        xbee = XBeeDevice("/dev/ttyUSB0", 9600)
+        xbee = XBeeDevice(port, 9600)
         
         try:
             xbee.open()
@@ -34,4 +34,5 @@ for port in ports:
             time.sleep(0.5)
 
             print("%s" % '\n'.join(map(str, xnet.get_connections())))
-            xbee.close()
+    finally:
+        xbee.close()
