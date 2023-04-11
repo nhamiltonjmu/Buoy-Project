@@ -1,0 +1,67 @@
+import serial
+import time
+import datetime
+import math
+import sqlite3
+from digi.xbee.devices import XBeeDevice, XBee64BitAddress, XBee16BitAddress, RemoteXBeeDevice
+
+#Connect to SQLite Database
+
+conn = sqlite3.connect('Database')
+c = conn.cursor()
+
+# Establish radios
+radio = XBeeDevice("/dev/ttyUSB0", 9600)
+homeradio = RemoteXBeeDevice(radio, XBee64BitAddress.from_hex_string("0013A20041EBAD4A"))
+
+#placeholder
+saturation = 0
+
+
+#Main loop, retrieve values from serial, calibration equations
+try:
+    while True:
+  
+            turbidity = 0
+            voltage = 0
+            saturation = saturation +1
+            
+            #Retrieve time and date information
+            current_time = datetime.datetime.now()
+            formatted_time = current_time.strftime('%H:%M:%S')
+            current_date = datetime.date.today()
+            date_string = current_date.strftime('%Y-%m-%d')
+            sent = "N"
+            latDMS = 0
+            lonDMS = 0
+            
+            
+            #Write to SQLite Database
+            c.execute("INSERT INTO dataTable (saturation, turbidity, latitude, longitude, time, date) VALUES (?, ?, ?, ?, ?, ?)", (saturation, turbidity, latDMS, lonDMS, formatted_time, date_string))
+            #c.execute("INSERT INTO trans (saturation, turbidity, currentdate, currenttime, latitude, longitude) VALUES (?, ?, ?, ?, ?, ?)")
+            conn.commit()
+            time.sleep(1)
+            
+            radio.open()
+            
+            select_stmt = "SELECT * FROM dataTable"
+            c.execute(select_stmt)
+            records = c.fetchall()
+            
+
+            time.sleep(1)
+
+            for record in records:
+                record_str = ','.join([str(value) for value in record])
+                
+
+                radio.send_data(homeradio, record_str.encode())
+                print('Broadcasting...')
+                time.sleep(10)
+
+#Close Communication
+except KeyboardInterrupt:
+    print("Serial Communication Closed.")
+    ser.close()
+    conn.close()
+    radio.close()
